@@ -15,7 +15,9 @@ app = Flask(__name__)
 app.register_blueprint(routes)
 app.register_blueprint(main)
 
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
+#socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode="eventlet")
+
 register_socketio_events(socketio)
 
 if __name__ == "__main__":
