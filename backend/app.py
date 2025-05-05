@@ -3,12 +3,10 @@ from flask_socketio import SocketIO
 from apscheduler.schedulers.background import BackgroundScheduler
 import pytz
 
-from routes import main, routes
-from tasks import background_data_fetcher, thread_stop_event
-from socket_events import register_socketio_events
-
-# import your new cleanup function
-from cleanup import cleanup_old_rows
+from backend.routes import main, routes
+from backend.tasks import background_data_fetcher, thread_stop_event
+from backend.socket_events import register_socketio_events
+from backend.cleanup import cleanup_old_rows
 
 # Flask + SocketIO setup
 app = Flask(__name__)
