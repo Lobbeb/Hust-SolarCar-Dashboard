@@ -1,7 +1,9 @@
 import time
 from threading import Event
 from flask_socketio import SocketIO
-from helpers import fetch_all_data
+
+from backend.helpers import fetch_all_data
+
 
 thread_stop_event = Event()
 

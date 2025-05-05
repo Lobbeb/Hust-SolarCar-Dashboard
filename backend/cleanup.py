@@ -1,6 +1,7 @@
 # backend/cleanup.py
 import pymysql
-from config import DB_HOST, DB_USER, DB_PASSWORD, DB_NAME
+
+from backend.config import DB_HOST, DB_USER, DB_PASSWORD, DB_NAME
 
 # How old data to keep (in days):
 RETENTION_DAYS = 30

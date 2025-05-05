@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, jsonify, make_response
-from helpers import fetch_all_data
+from backend.helpers import fetch_all_data
 
 main = Blueprint('main', __name__)
 routes = Blueprint('routes', __name__)

@@ -1,5 +1,6 @@
 import pymysql, datetime
-from config import DB_HOST, DB_USER, DB_PASSWORD, DB_NAME
+
+from backend.config import DB_HOST, DB_USER, DB_PASSWORD, DB_NAME
 
 def connect_db():
     return pymysql.connect(
