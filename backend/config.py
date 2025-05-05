@@ -1,6 +1,8 @@
 
 # ============ CONFIG ============
-DB_HOST = "194.47.13.187"
-DB_USER = "remoteuser"
-DB_PASSWORD = "mhsRuS84s6K6baslP9G7LGH"
-DB_NAME = "Hust"
+import os
+
+DB_HOST = os.environ.get("DB_HOST")
+DB_USER = os.environ.get("DB_USER")
+DB_PASSWORD = os.environ.get("DB_PASSWORD")
+DB_NAME = os.environ.get("DB_NAME")
