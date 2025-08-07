@@ -1,120 +1,190 @@
 # HUST Solar Car Dashboard
 
-A real-time telemetry dashboard for monitoring solar car performance during racing. Built with Vue.js frontend and Flask backend, designed for the Halmstad University Solar Team.
+Real-time telemetry dashboard for solar car racing, built for the Halmstad University Solar Team competing in BWSC. Vue.js frontend with Flask backend.
 
-## Overview
-
-This dashboard displays live telemetry data from a solar car's onboard systems including battery status, motor performance, solar panel output, and vehicle metrics. Features critical alerts for racing safety and energy management recommendations.
-
-## Repository Contents
-
-- **`backend/`** - Flask API with MySQL database integration and WebSocket support
-- **`hust-frontend/`** - Vue.js 3 dashboard with real-time charts and alerts  
-- **`requirements.txt`** - Python dependencies
-- **`setup.sh/setup.bat`** - Installation scripts
-- **`preview.html`** - VS Code integration for development
+![Vue.js](https://img.shields.io/badge/Vue.js-3.4.21-4FC08D) ![Flask](https://img.shields.io/badge/Flask-2.3.3-000000) ![Python](https://img.shields.io/badge/Python-3.8+-3776AB)
 
 ## Features
 
-**Real-time Monitoring:**
-- Battery voltage, current, and cell temperatures
-- Motor temperature and current draw
-- Solar panel power output (3 individual + total)
-- Vehicle speed and distance traveled
+- **Battery monitoring** - Voltage, current, cell temperatures with configurable alerts
+- **Motor data** - Temperature and current monitoring with thermal protection
+- **Solar tracking** - 3 MPPT controllers plus total power output
+- **Vehicle metrics** - Speed, distance, energy consumption
+- **BWSC-optimized alerts** - Racing-specific thresholds for Australian conditions
+- **Energy management** - Real-time balance calculations with speed recommendations
+- **Data persistence** - Automated cleanup with latest records protection
+- **Development tools** - VS Code integration, hot reload, comprehensive error handling
 
-**Critical Alerts:**
-- Battery voltage warnings (52V warning, 48V critical)
-- Temperature monitoring (45°C warning, 55°C critical)
-- Speed limit compliance (105 km/h warning, 135 km/h critical)
-- Motor overheating protection
+## Repository Structure
 
-**Race Strategy:**
-- Real-time energy balance calculation
-- Speed recommendations based on energy surplus/deficit
-- Solar efficiency monitoring
+```
+├── backend/                 # Flask API server
+│   ├── app.py              # Main application
+│   ├── routes.py           # API endpoints
+│   ├── socket_events.py    # WebSocket handlers
+│   ├── database_cleanup.py # Data management
+│   └── helpers.py          # Database utilities
+├── hust-frontend/          # Vue.js dashboard
+│   ├── src/ui/            # Dashboard components
+│   │   ├── TelemDashboard.vue
+│   │   ├── LiveChart.vue
+│   │   ├── MetricPanel.vue
+│   │   └── CleanupPanel.vue
+│   ├── store.js           # State management
+│   └── App.vue
+├── requirements.txt        # Python dependencies
+├── setup.sh / setup.bat   # Installation scripts
+└── preview.html          # VS Code integration
+```
 
-## Installation & Setup
+## Core Features
 
-### Prerequisites
+### Real-time Telemetry
+- Battery: Voltage, current, individual cell temperatures
+- Motor: Current draw, temperature monitoring
+- Solar: 3 MPPT controllers + total power output
+- Vehicle: Speed, distance, energy consumption
+
+### Racing Alerts (BWSC-optimized)
+- Battery: 52V warning → 48V critical
+- Temperature: 45°C warning → 55°C critical  
+- Speed: 105 km/h highway → 135 km/h NT limit
+- Energy balance with speed recommendations
+- Data caching during connection drops
+- Latest records protection (always keeps 300-500 newest records)
+
+### Development Features
+- Automated database cleanup with configurable retention
+- Real-time statistics and system health monitoring
+- VS Code preview integration
+- Connection pooling and error recovery
+
+## Installation
+
+### Requirements
 - Python 3.8+ with pip
-- Node.js 16+ with npm  
-- MySQL database with telemetry tables
+- Node.js 16+ with npm
+- MySQL database
 
 ### Quick Setup
 ```bash
-# Clone repository
 git clone https://github.com/Lobbeb/Hust-SolarCar-Dashboard.git
 cd Hust-SolarCar-Dashboard
 
 # Run setup script
-./setup.sh    # Linux/Mac
+./setup.sh    # Linux/Mac/WSL
 setup.bat     # Windows
 
 # Configure database
 cp .env.template .env
-# Edit .env with your database credentials
+# Edit .env with your MySQL credentials
 ```
 
-### Manual Setup
+### Manual Installation
 ```bash
-# Backend
+# Install dependencies
 pip install -r requirements.txt
-cd backend && python app.py
+cd hust-frontend && npm install
 
-# Frontend  
-cd hust-frontend
-npm install && npm run dev
+# Start servers
+python backend/app.py          # Backend (port 5000)
+npm run dev                    # Frontend (port 5173)
 ```
 
 ## Usage
 
-**Database Requirements:**
-Your MySQL database needs tables with these fields:
-- Battery: `Battery_Volt`, `Battery_Current`, `Battery_Cell_*_Temp`
-- Motor: `Motor_Current`, `Motor_Temp`, `Motor_Controller_Temp`  
-- MPPT: `MPPT1_Watt`, `MPPT2_Watt`, `MPPT3_Watt`, `MPPT_Total_Watt`
-- Vehicle: `Velocity`, `Distance_Travelled`
+### Database Schema
+Your MySQL database needs telemetry tables with these fields:
 
-**Access:**
-- Backend API: `http://localhost:5000`
-- Frontend Dashboard: `http://localhost:5173`
-- VS Code Preview: Right-click `preview.html` → "Show Preview"
+**Battery Data:**
+- `Battery_Volt`, `Battery_Current`
+- `Battery_Cell_1_Temp` through `Battery_Cell_N_Temp`
+
+**Motor Data:**
+- `Motor_Current`, `Motor_Temp`, `Motor_Controller_Temp`
+
+**Solar Data (MPPT):**
+- `MPPT1_Watt`, `MPPT2_Watt`, `MPPT3_Watt`, `MPPT_Total_Watt`
+
+**Vehicle Data:**
+- `Velocity`, `Distance_Travelled`
+
+### Access
+- Main dashboard: `http://localhost:5173`
+- API backend: `http://localhost:5000`
+- VS Code preview: Right-click `preview.html` → "Show Preview"
+
+### Configuration
+
+**Racing Thresholds** (edit in `TelemDashboard.vue`):
+```javascript
+// Battery thresholds (48V LiFePO4 system)
+warningVoltage: 52V    // "Plan charging stop"
+criticalVoltage: 48V   // "Find charging immediately"
+
+// Temperature limits
+warningTemp: 45°C      // Battery warming
+criticalTemp: 55°C     // Thermal protection
+
+// Speed limits (Australian roads)
+speedWarning: 105 km/h   // Highway limit
+speedCritical: 135 km/h  // NT speed limit
+```
 
 ## Configuration
 
-### Racing Thresholds
-Adjust alert thresholds in `TelemDashboard.vue` based on your car's specifications:
-- Configure speed limits based on race regulations and road conditions
-- Set battery voltage thresholds based on your pack's voltage and chemistry
-- Customize solar power targets based on your panel array specifications
+### Customizing for Your Car
+Edit thresholds in `hust-frontend/src/ui/TelemDashboard.vue`:
 
-### Alert System
-Current thresholds (modify as needed):
-```javascript
-// Battery (assumes 48V system)
-52V - Warning: "Plan charging stop soon"  
-48V - Critical: "Find charging immediately!"
+- Battery voltage limits based on your pack chemistry
+- Temperature limits based on your cooling system
+- Speed alerts based on race regulations
+- Solar power targets based on your array specs
 
-// Temperature (Australian conditions)
-45°C - Warning: Battery warming
-55°C - Critical: Thermal danger
+### Database Management
+The system includes automated data cleanup:
+- Configurable retention periods (14-30 days)
+- Always preserves latest 300-500 records
+- Automatic table optimization
+- Safety limits prevent accidental data loss
 
-// Speed (Australian road limits)  
-105 km/h - Warning: Approaching highway limit
-135 km/h - Critical: Over Northern Territory limit
+### Development
+```bash
+# Frontend with hot reload
+cd hust-frontend && npm run dev
+
+# VS Code integration
+code preview.html    # Right-click → "Show Preview"
 ```
 
-## Setup
+## Technical Details
 
-1. Install dependencies: `pip install -r requirements.txt`
-2. Configure database connection in `.env` file
-3. Run backend: `python backend/app.py`
-4. Run frontend: `cd hust-frontend && npm run dev`
+### Backend
+- Flask 2.3.3 with REST API and WebSocket support
+- PyMySQL 1.0.3 with connection pooling
+- APScheduler for automated database maintenance
+- Socket.IO for real-time data updates
+
+### Frontend
+- Vue.js 3.4.21 with Composition API
+- Pinia for state management and data caching
+- Chart.js for real-time data visualization
+- Vite development server with hot reload
+
+### Database
+- MySQL with optimized telemetry tables
+- Timestamp-based indexing for performance
+- Automated cleanup with configurable retention
+- Multi-layer data protection system
 
 ## Contributors
+
+This project was developed for the Halmstad University Solar Team's BWSC competition preparation.
 
 **William Olsson** ([wilols20@student.hh.se](mailto:wilols20@student.hh.se)) - Lead Developer
 
 ## License
 
-MIT License - see LICENSE file for details.
+MIT License - See `LICENSE` file for details.
+
+Open source for other solar car teams to use and improve.
