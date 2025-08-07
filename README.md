@@ -33,12 +33,6 @@ This dashboard displays live telemetry data from a solar car's onboard systems i
 - Speed recommendations based on energy surplus/deficit
 - Solar efficiency monitoring
 
-**Database Management:**
-- Automated cleanup every 7 days (configurable)
-- Intelligent data retention (14-30 days based on data type)
-- Manual cleanup tools and statistics
-- Prevents database overflow during long racing sessions
-
 ## Installation & Setup
 
 ### Prerequisites
@@ -110,42 +104,12 @@ Current thresholds (modify as needed):
 135 km/h - Critical: Over Northern Territory limit
 ```
 
-## API Endpoints
+## Setup
 
-- `GET /data` - Fetch all telemetry data
-- `GET /data/<table>` - Fetch specific table  
-- `GET /health` - System health check
-
-**Database Management:**
-- `GET /admin/cleanup/stats` - Database statistics
-- `GET /admin/cleanup/recommendations` - Cleanup recommendations
-- `POST /admin/cleanup/dry-run` - Preview cleanup without deleting
-- `POST /admin/cleanup/execute` - Execute cleanup (requires confirmation)
-- `POST /admin/cleanup/scheduler/start` - Start automated cleanup
-- `POST /admin/cleanup/scheduler/stop` - Stop automated cleanup
-
-**Smart Data Protection:**
-Our cleanup system uses dual protection to ensure the dashboard always has data:
-- ⏰ **Time-based retention**: Keeps data for 14-30 days (configurable)
-- 🛡️ **Latest records protection**: Always preserves the newest 300-500 records regardless of age
-- 🔢 **Minimum thresholds**: Never deletes if tables would have fewer than 500-1000 records
-
-This means even during long storage periods, you'll always have recent telemetry data to view.
-
-**Command Line Utility:**
-```bash
-# Show database statistics
-python cleanup_utility.py --stats
-
-# Preview cleanup
-python cleanup_utility.py --dry-run
-
-# Execute cleanup
-python cleanup_utility.py --execute
-
-# Get recommendations
-python cleanup_utility.py --recommendations
-```
+1. Install dependencies: `pip install -r requirements.txt`
+2. Configure database connection in `.env` file
+3. Run backend: `python backend/app.py`
+4. Run frontend: `cd hust-frontend && npm run dev`
 
 ## Contributors
 
