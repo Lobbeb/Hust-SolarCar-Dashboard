@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solar Car Dashboard - VS Code Preview</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background: #1a1a1a;
+            color: white;
+        }
+        
+        .preview-header {
+            background: #2b2b2b;
+            padding: 10px;
+            text-align: center;
+            border-bottom: 2px solid #00ff88;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #ff4444;
+            margin-right: 8px;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-indicator.connected {
+            background: #00ff88;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        iframe {
+            width: 100%;
+            height: calc(100vh - 60px);
+            border: none;
+            background: white;
+        }
+        
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 200px;
+            color: #ccc;
+        }
+        
+        .error-message {
+            background: rgba(255, 68, 68, 0.2);
+            color: #ff4444;
+            padding: 15px;
+            margin: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #ff4444;
+        }
+    </style>
+</head>
+<body>
+    <div class="preview-header">
+        <span class="status-indicator" id="statusDot"></span>
+        <strong>HUST Solar Car Dashboard</strong> - VS Code Live Preview
+        <span id="connectionStatus">Connecting...</span>
+    </div>
+    
+    <div id="content">
+        <div class="loading">
+            <div>🚗 Loading Solar Car Dashboard...</div>
+        </div>
+    </div>
+
+    <script>
+        const statusDot = document.getElementById('statusDot');
+        const statusText = document.getElementById('connectionStatus');
+        const content = document.getElementById('content');
+        
+        let retryCount = 0;
+        const maxRetries = 5;
+        
+        function checkConnection() {
+            fetch('http://localhost:5173')
+                .then(response => {
+                    if (response.ok) {
+                        statusDot.classList.add('connected');
+                        statusText.textContent = 'Connected';
+                        loadDashboard();
+                    } else {
+                        throw new Error('Server not responding');
+                    }
+                })
+                .catch(error => {
+                    statusDot.classList.remove('connected');
+                    statusText.textContent = 'Disconnected';
+                    
+                    if (retryCount < maxRetries) {
+                        retryCount++;
+                        setTimeout(checkConnection, 2000);
+                        content.innerHTML = `
+                            <div class="loading">
+                                <div>🔄 Attempting to connect... (${retryCount}/${maxRetries})</div>
+                            </div>
+                        `;
+                    } else {
+                        content.innerHTML = `
+                            <div class="error-message">
+                                <h3>🚫 Connection Failed</h3>
+                                <p>Could not connect to the development server at <code>http://localhost:5173</code></p>
+                                <p><strong>To fix this:</strong></p>
+                                <ol>
+                                    <li>Open terminal in VS Code</li>
+                                    <li>Navigate to: <code>cd hust-frontend</code></li>
+                                    <li>Run: <code>npm run dev</code></li>
+                                    <li>Refresh this preview</li>
+                                </ol>
+                                <button onclick="retryConnection()" style="
+                                    background: #00ff88; 
+                                    color: black; 
+                                    border: none; 
+                                    padding: 10px 20px; 
+                                    border-radius: 5px; 
+                                    cursor: pointer;
+                                    margin-top: 10px;
+                                ">🔄 Retry Connection</button>
+                            </div>
+                        `;
+                    }
+                });
+        }
+        
+        function loadDashboard() {
+            content.innerHTML = '<iframe src="http://localhost:5173" title="Solar Car Dashboard"></iframe>';
+        }
+        
+        function retryConnection() {
+            retryCount = 0;
+            checkConnection();
+        }
+        
+        // Start checking connection
+        checkConnection();
+        
+        // Check connection every 30 seconds
+        setInterval(checkConnection, 30000);
+    </script>
+</body>
+</html>
