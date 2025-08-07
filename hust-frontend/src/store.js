@@ -11,7 +11,9 @@ export const useTelemStore = defineStore("telem", {
     lastFetch: null,
     connectionStatus: 'disconnected',
     retryCount: 0,
-    maxRetries: 3
+    maxRetries: 3,
+    lastSuccessfulData: null, // Cache last successful data fetch
+    hasEverConnected: false   // Track if we've ever successfully connected
   }),
   
   getters: {
@@ -85,6 +87,8 @@ export const useTelemStore = defineStore("telem", {
         this.socket.on("new_data", (payload) => {
           if (this.live && payload) {
             this.raw = payload;
+            this.lastSuccessfulData = payload; // Cache successful WebSocket data
+            this.hasEverConnected = true;
             this.lastFetch = Date.now();
             this.error = null;
             console.log("📊 Received new data:", this.totalDataPoints, "points");
@@ -106,12 +110,22 @@ export const useTelemStore = defineStore("telem", {
         console.log(`🔄 Refreshing data (limit: ${limit})...`);
         const { data } = await axios.get(`/data?limit=${limit}`);
         this.raw = data;
+        this.lastSuccessfulData = data; // Cache successful data
+        this.hasEverConnected = true;   // Mark successful connection
         this.lastFetch = Date.now();
         this.retryCount = 0;
         console.log("✅ Data refreshed:", this.totalDataPoints, "points");
       } catch (error) {
         console.error("❌ Failed to refresh data:", error);
-        this.error = error.response?.data?.error || "Failed to fetch data";
+        
+        // Use cached data if available, otherwise show error
+        if (this.lastSuccessfulData && this.hasEverConnected) {
+          this.raw = this.lastSuccessfulData;
+          this.error = "Connection lost - showing cached data";
+          console.log("📦 Using cached data:", this.totalDataPoints, "points");
+        } else {
+          this.error = error.response?.data?.error || "Failed to connect to database";
+        }
         
         // Retry logic
         if (this.retryCount < this.maxRetries) {

@@ -1,5 +1,7 @@
 {
-  "name": "hust-dashboard-clean",
+  "name": "hust-solar-car-dashboard",
+  "version": "2.0.0",
+  "description": "Professional Solar Car Telemetry Dashboard with BWSC Racing Features",
   "private": true,
   "scripts": {
     "dev": "vite",

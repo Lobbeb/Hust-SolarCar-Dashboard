@@ -1,5 +1,5 @@
-import pymysql, datetime
-import pymysql.pooling
+import pymysql
+import datetime
 import logging
 from contextlib import contextmanager
 from backend.config import DB_HOST, DB_USER, DB_PASSWORD, DB_NAME, MAX_DB_CONNECTIONS

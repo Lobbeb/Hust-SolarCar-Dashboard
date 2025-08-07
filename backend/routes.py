@@ -5,6 +5,13 @@ from datetime import datetime
 from functools import wraps
 from backend.helpers import fetch_all_data, health_check
 from backend.config import RATE_LIMIT_PER_MINUTE
+from backend.database_cleanup import (
+    run_cleanup, 
+    get_database_stats, 
+    get_cleanup_recommendations,
+    start_automated_cleanup,
+    stop_automated_cleanup
+)
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +66,8 @@ def health_check_endpoint():
             'status': status,
             'timestamp': datetime.utcnow().isoformat(),
             'database': 'connected' if db_healthy else 'disconnected',
-            'version': '1.0.0'
+            'version': '2.0.0',
+            'features': ['BWSC_Racing', 'Database_Cleanup', 'Latest_Records_Protection']
         }), status_code
     except Exception as e:
         logger.error(f"Health check error: {e}")
@@ -132,3 +140,151 @@ def export_csv():
     except Exception as e:
         logger.error(f"Error in export_csv: {e}")
         return jsonify({'error': 'Export failed'}), 500
+
+
+# ===== DATABASE CLEANUP ENDPOINTS =====
+
+@main.route("/admin/cleanup/stats", methods=['GET'])
+@rate_limit(max_requests=10)  # Limited access for admin endpoints
+def get_cleanup_stats():
+    """Get detailed database statistics for cleanup analysis"""
+    try:
+        stats = get_database_stats()
+        total_records = sum(table['total_records'] for table in stats.values())
+        total_deletable = sum(table['records_to_delete'] for table in stats.values())
+        
+        response = {
+            'success': True,
+            'total_records': total_records,
+            'total_deletable': total_deletable,
+            'table_stats': stats,
+            'generated_at': datetime.now().isoformat()
+        }
+        
+        logger.info(f"Database stats requested: {total_records:,} total records, {total_deletable:,} deletable")
+        return jsonify(response)
+        
+    except Exception as e:
+        logger.error(f"Error getting database stats: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@main.route("/admin/cleanup/recommendations", methods=['GET'])
+@rate_limit(max_requests=10)
+def get_cleanup_recs():
+    """Get intelligent cleanup recommendations based on database analysis"""
+    try:
+        recommendations = get_cleanup_recommendations()
+        
+        if 'error' in recommendations:
+            return jsonify({'success': False, 'error': recommendations['error']}), 500
+        
+        response = {
+            'success': True,
+            'recommendations': recommendations,
+            'generated_at': datetime.now().isoformat()
+        }
+        
+        logger.info(f"Cleanup recommendations generated: {recommendations['recommended_action']}")
+        return jsonify(response)
+        
+    except Exception as e:
+        logger.error(f"Error generating cleanup recommendations: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@main.route("/admin/cleanup/dry-run", methods=['POST'])
+@rate_limit(max_requests=5)  # Very limited for resource-intensive operations
+def cleanup_dry_run():
+    """Perform a dry run cleanup to see what would be deleted without actually deleting"""
+    try:
+        logger.info("Starting cleanup dry run...")
+        result = run_cleanup(dry_run=True)
+        
+        if 'error' in result:
+            return jsonify({'success': False, 'error': result['error']}), 500
+        
+        response = {
+            'success': True,
+            'dry_run': True,
+            'result': result,
+            'message': f"Dry run completed. Would delete {result['total_deleted']:,} records"
+        }
+        
+        logger.info(f"Cleanup dry run completed: {result['total_deleted']:,} records would be deleted")
+        return jsonify(response)
+        
+    except Exception as e:
+        logger.error(f"Error in cleanup dry run: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@main.route("/admin/cleanup/execute", methods=['POST'])
+@rate_limit(max_requests=3)  # Extremely limited for actual cleanup
+def execute_cleanup():
+    """Execute actual database cleanup - USE WITH CAUTION!"""
+    try:
+        # Get confirmation parameter
+        confirm = request.json.get('confirm') if request.is_json else False
+        
+        if not confirm:
+            return jsonify({
+                'success': False, 
+                'error': 'Cleanup requires explicit confirmation. Send {"confirm": true} in request body.'
+            }), 400
+        
+        logger.warning(" EXECUTING LIVE DATABASE CLEANUP ")
+        result = run_cleanup(dry_run=False)
+        
+        if 'error' in result:
+            return jsonify({'success': False, 'error': result['error']}), 500
+        
+        response = {
+            'success': True,
+            'dry_run': False,
+            'result': result,
+            'message': f"Cleanup completed successfully. Deleted {result['total_deleted']:,} records in {result['duration']:.2f} seconds"
+        }
+        
+        logger.warning(f" LIVE CLEANUP COMPLETED: {result['total_deleted']:,} records deleted in {result['duration']:.2f}s")
+        return jsonify(response)
+        
+    except Exception as e:
+        logger.error(f"Error in live cleanup execution: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@main.route("/admin/cleanup/scheduler/start", methods=['POST'])
+@rate_limit(max_requests=5)
+def start_cleanup_scheduler():
+    """Start the automated cleanup scheduler"""
+    try:
+        start_automated_cleanup()
+        
+        response = {
+            'success': True,
+            'message': 'Automated cleanup scheduler started',
+            'schedule': 'Every 7 days at 3:00 AM'
+        }
+        
+        logger.info(" Automated cleanup scheduler started")
+        return jsonify(response)
+        
+    except Exception as e:
+        logger.error(f"Error starting cleanup scheduler: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@main.route("/admin/cleanup/scheduler/stop", methods=['POST'])
+@rate_limit(max_requests=5)
+def stop_cleanup_scheduler():
+    """Stop the automated cleanup scheduler"""
+    try:
+        stop_automated_cleanup()
+        
+        response = {
+            'success': True,
+            'message': 'Automated cleanup scheduler stopped'
+        }
+        
+        logger.info(" Automated cleanup scheduler stopped")
+        return jsonify(response)
+        
+    except Exception as e:
+        logger.error(f"Error stopping cleanup scheduler: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
